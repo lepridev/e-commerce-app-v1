@@ -19,7 +19,7 @@ export default function CountMeter() {
       <Card
         imgURL={"/profit-up.png"}
         title={"Revenue"}
-        value={`₹ ${(ordersCounts?.totalRevenue ?? 0) / 100}`}
+        value={`CFA ${(ordersCounts?.totalRevenue ?? 0) / 100}`}
       />
       <Card imgURL={"/team.png"} title={"Customer"} value={totalUsers ?? 0} />
     </section>

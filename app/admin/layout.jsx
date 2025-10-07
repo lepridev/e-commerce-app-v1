@@ -35,7 +35,7 @@ function AdminChecking({ children }) {
   if (!user) {
     return (
       <div className="h-screen w-screen flex justify-center items-center">
-        <h1>Please Login First!</h1>
+        <h1>Connectez-vous à votre compte</h1>
       </div>
     );
   }

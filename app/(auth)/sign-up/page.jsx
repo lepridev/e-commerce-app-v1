@@ -5,6 +5,7 @@ import { auth } from "@/lib/firebase";
 import { createUser } from "@/lib/firestore/user/write";
 import { Button } from "@nextui-org/react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -72,9 +73,18 @@ export default function Page() {
   return (
     <main className="w-full flex justify-center items-center bg-gradient-to-br from-blue-50 to-gray-100 md:p-24 p-10 min-h-screen">
       <section className="flex flex-col gap-6 w-full max-w-md">
-        {/* Logo */}
+        {/* Logo - CORRIGÉ */}
         <div className="flex justify-center">
-          <img className="h-16" src="/logo.png" alt="Logo" />
+          <div className="relative w-56 h-28">
+            {/* Conteneur avec dimensions fixes */}
+            <Image
+              src="/logoShoesrbg.png"
+              alt="Logo Shoes"
+              fill
+              className="object-contain" // ✅ S'adapte au conteneur
+              priority // ✅ Charge en priorité
+            />
+          </div>
         </div>
 
         {/* Carte d'inscription */}

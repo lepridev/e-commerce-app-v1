@@ -9,6 +9,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -52,9 +53,19 @@ export default function Page() {
   return (
     <main className="w-full flex justify-center items-center bg-gradient-to-br from-blue-50 to-gray-100 md:p-24 p-10 min-h-screen">
       <section className="flex flex-col gap-6 w-full max-w-md">
-        {/* Logo */}
+        {/* Logo - CORRIGÉ */}
         <div className="flex justify-center">
-          <img className="h-16" src="/logo.png" alt="Logo" />
+          <div className="relative w-56 h-28">
+            {" "}
+            {/* Conteneur avec dimensions fixes */}
+            <Image
+              src="/logoShoesrbg.png"
+              alt="Logo Shoes"
+              fill
+              className="object-contain" // ✅ S'adapte au conteneur
+              priority // ✅ Charge en priorité
+            />
+          </div>
         </div>
 
         {/* Carte de connexion */}
@@ -168,7 +179,7 @@ function SignInWithGoogleComponent() {
       await createUser({
         uid: user?.uid,
         displayName: user?.displayName,
-        email: user?.email, // N'oubliez pas d'ajouter l'email ici aussi
+        email: user?.email,
         photoURL: user?.photoURL,
       });
       toast.success("Connexion Google réussie");
