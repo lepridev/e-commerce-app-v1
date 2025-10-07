@@ -1,9 +1,26 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      "firebasestorage.googleapis.com",
-      "res.cloudinary.com", // Cloudinary
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        port: "",
+        pathname: "/**",
+      },
+      // Vous pouvez ajouter d'autres domaines ici si nécessaire
+      // {
+      //   protocol: 'https',
+      //   hostname: 'exemple.com',
+      //   port: '',
+      //   pathname: '/**',
+      // },
     ],
   },
   experimental: {
@@ -17,4 +34,5 @@ const nextConfig = {
     return config;
   },
 };
+
 export default nextConfig;

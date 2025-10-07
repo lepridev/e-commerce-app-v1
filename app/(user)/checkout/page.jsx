@@ -41,7 +41,7 @@ export default function Page() {
   if (!productIdsList && productIdsList?.length === 0) {
     return (
       <div>
-        <h1>Products Not Found</h1>
+        <h1>Produit non trouvé</h1>
       </div>
     );
   }

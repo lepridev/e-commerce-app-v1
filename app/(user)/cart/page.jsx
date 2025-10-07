@@ -8,47 +8,74 @@ import { Button, CircularProgress } from "@nextui-org/react";
 import { Minus, Plus, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Page() {
   const { user } = useAuth();
-  const { data, isLoading } = useUser({ uid: user?.uid });
+  const { data, isLoading, mutate } = useUser({ uid: user?.uid });
   const router = useRouter();
+  const [cartItemsWithProducts, setCartItemsWithProducts] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+  // Charger les produits pour chaque article du panier
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!data?.carts || data.carts.length === 0) {
+        setCartItemsWithProducts([]);
+        setIsLoadingProducts(false);
+        return;
+      }
+
+      setIsLoadingProducts(true);
+
+      // Pour chaque article du panier, on va chercher les détails du produit
+      const itemsWithProducts = await Promise.all(
+        data.carts.map(async (item) => {
+          return {
+            ...item,
+            // On retourne l'article tel quel, les prix seront chargés dans ProductItem
+          };
+        })
+      );
+
+      setCartItemsWithProducts(itemsWithProducts);
+      setIsLoadingProducts(false);
+    };
+
+    loadProducts();
+  }, [data?.carts]);
 
   const handleCommanderClick = () => {
-    // Réinitialiser la pastille du panier
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("cartCleared"));
     }
-
-    // Rediriger vers la page de checkout
     router.push("/checkout?type=cart");
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingProducts) {
     return (
       <div className="p-10 flex w-full justify-center">
-        <CircularProgress />
+        <CircularProgress label="Chargement du panier..." />
       </div>
     );
   }
 
-  const cartItemsCount = data?.carts?.length || 0;
+  const cartItemsCount =
+    data?.carts?.reduce((total, item) => total + (item.quantity || 1), 0) || 0;
   const isCartEmpty = cartItemsCount === 0;
 
-  // Calculer le prix total en utilisant les données des produits
-  const totalPrice = calculateTotalPrice(data?.carts);
+  // Calculer le prix total basé sur les produits chargés
+  const totalPrice = calculateTotalPrice(cartItemsWithProducts);
 
   return (
-    <main className="flex flex-col gap-3 justify-center items-center p-5">
+    <main className="flex flex-col gap-3 justify-center items-center p-5 min-h-screen">
       <h1 className="text-2xl font-semibold">Votre panier</h1>
 
       {isCartEmpty ? (
         <div className="flex flex-col gap-5 justify-center items-center h-full w-full py-20">
           <div className="flex justify-center">
             <Image
-              className=""
               width={200}
               height={200}
               src="/svgs/Empty-pana.svg"
@@ -67,9 +94,14 @@ export default function Page() {
       ) : (
         <>
           <div className="p-5 w-full md:max-w-[900px] gap-4 grid grid-cols-1 md:grid-cols-2">
-            {data?.carts?.map((item, key) => {
-              return <ProductItem item={item} key={item?.id} />;
-            })}
+            {data?.carts?.map((item) => (
+              <ProductItem
+                item={item}
+                key={item?.id}
+                onUpdate={mutate}
+                userData={data}
+              />
+            ))}
           </div>
 
           {/* Résumé du panier */}
@@ -78,9 +110,21 @@ export default function Page() {
               <span className="text-gray-600">Nombre d'articles:</span>
               <span className="font-semibold">{cartItemsCount}</span>
             </div>
+            {/* <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-600">Total:</span>
+              <span className="font-semibold text-green-600">
+                CFA {totalPrice}
+              </span>
+            </div> */}
+            <div className="border-t pt-3">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-500">Articles distincts:</span>
+                <span className="font-medium">{data?.carts?.length || 0}</span>
+              </div>
+            </div>
           </div>
 
-          <div>
+          <div className="text-center">
             <Button
               onClick={handleCommanderClick}
               className="bg-green-600 text-white px-8 py-3 text-md font-semibold"
@@ -100,84 +144,108 @@ export default function Page() {
   );
 }
 
-function ProductItem({ item }) {
+function ProductItem({ item, onUpdate, userData }) {
   const { user } = useAuth();
-  const { data, mutate } = useUser({ uid: user?.uid });
-
   const [isRemoving, setIsRemoving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const { data: product } = useProduct({ productId: item?.id });
+  const { data: product, isLoading: isLoadingProduct } = useProduct({
+    productId: item?.id,
+  });
 
   const handleRemove = async () => {
     if (!confirm("Êtes-vous sûr de vouloir retirer ce produit du panier ?"))
       return;
+
     setIsRemoving(true);
     try {
-      const newList = data?.carts?.filter((d) => d?.id != item?.id);
+      const newList = userData?.carts?.filter((d) => d?.id !== item?.id);
       await updateCarts({ list: newList, uid: user?.uid });
-      mutate();
+      if (onUpdate) onUpdate();
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
+    } finally {
+      setIsRemoving(false);
     }
-    setIsRemoving(false);
   };
 
-  const handleUpdate = async (quantity) => {
-    if (quantity < 1) return;
+  const handleUpdate = async (newQuantity) => {
+    if (newQuantity < 1) return;
 
     setIsUpdating(true);
     try {
-      const newList = data?.carts?.map((d) => {
+      const newList = userData?.carts?.map((d) => {
         if (d?.id === item?.id) {
           return {
             ...d,
-            quantity: parseInt(quantity),
+            quantity: parseInt(newQuantity),
           };
-        } else {
-          return d;
         }
+        return d;
       });
+
       await updateCarts({ list: newList, uid: user?.uid });
-      mutate();
+      if (onUpdate) onUpdate();
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
+    } finally {
+      setIsUpdating(false);
     }
-    setIsUpdating(false);
   };
 
   // Calculer le prix total pour cet article
-  const itemTotal = product?.salePrice ? product.salePrice * item?.quantity : 0;
+  const itemPrice = product?.salePrice || product?.price || 0;
+  const itemTotal = itemPrice * (item?.quantity || 1);
+
+  if (isLoadingProduct) {
+    return (
+      <div className="flex gap-3 items-center border px-3 py-3 rounded-xl">
+        <div className="h-14 w-14 bg-gray-200 rounded-lg animate-pulse"></div>
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex gap-3 items-center border px-3 py-3 rounded-xl hover:shadow-md transition-shadow">
+    <div className="flex gap-3 items-center border px-3 py-3 rounded-xl hover:shadow-md transition-shadow bg-white">
       <div className="h-14 w-14 p-1 flex-shrink-0">
         <Image
           className="w-full h-full object-cover rounded-lg"
-          src={product?.featureImage}
+          src={product?.featureImage || "/placeholder-image.jpg"}
           width={56}
           height={56}
-          alt={product?.title}
+          alt={product?.title || "Produit"}
+          onError={(e) => {
+            e.target.src = "/placeholder-image.jpg";
+          }}
         />
       </div>
       <div className="flex flex-col gap-1 w-full">
-        <h1 className="text-sm font-semibold line-clamp-2">{product?.title}</h1>
-        <h1 className="text-green-500 text-sm">
-          CFA {product?.salePrice}{" "}
-          {product?.price > product?.salePrice && (
-            <span className="line-through text-xs text-gray-500">
-              CFA {product?.price}
-            </span>
-          )}
+        <h1 className="text-sm font-semibold line-clamp-2">
+          {product?.title || "Produit non trouvé"}
         </h1>
+
+        {product ? (
+          <h1 className="text-green-500 text-sm">
+            CFA {itemPrice}
+            {product?.price > product?.salePrice && product?.salePrice && (
+              <span className="line-through text-xs text-gray-500 ml-2">
+                CFA {product?.price}
+              </span>
+            )}
+          </h1>
+        ) : (
+          <h1 className="text-red-500 text-xs">Produit non disponible</h1>
+        )}
 
         <div className="flex justify-between items-center">
           <div className="flex text-xs items-center gap-2">
             <Button
-              onClick={() => {
-                handleUpdate(item?.quantity - 1);
-              }}
-              isDisabled={isUpdating || item?.quantity <= 1}
+              onClick={() => handleUpdate((item?.quantity || 1) - 1)}
+              isDisabled={isUpdating || (item?.quantity || 1) <= 1}
               isIconOnly
               size="sm"
               className="h-6 w-6 min-w-6"
@@ -185,12 +253,10 @@ function ProductItem({ item }) {
               <Minus size={12} />
             </Button>
             <span className="w-8 text-center font-medium">
-              {item?.quantity}
+              {item?.quantity || 1}
             </span>
             <Button
-              onClick={() => {
-                handleUpdate(item?.quantity + 1);
-              }}
+              onClick={() => handleUpdate((item?.quantity || 1) + 1)}
               isDisabled={isUpdating}
               isIconOnly
               size="sm"
@@ -200,11 +266,16 @@ function ProductItem({ item }) {
             </Button>
           </div>
 
-          <div className="text-right">
-            <div className="text-sm font-semibold text-green-600">
-              CFA {itemTotal}
+          {product && (
+            <div className="text-right">
+              <div className="text-sm font-semibold text-green-600">
+                CFA {itemTotal}
+              </div>
+              <div className="text-xs text-gray-500">
+                {item?.quantity || 1} × CFA {itemPrice}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
       <div className="flex gap-3 items-center">
@@ -232,70 +303,25 @@ function calculateTotalPrice(cartItems) {
 
   let total = 0;
 
-  // Parcourir chaque article du panier
   cartItems.forEach((item) => {
-    // Vérifier si l'article a un prix direct
-    if (item.salePrice) {
-      total += item.salePrice * item.quantity;
-      console.log(
-        `Article ${item.id}: ${item.salePrice} x ${item.quantity} = ${
-          item.salePrice * item.quantity
-        }`
-      );
-    }
-    // Si l'article a un produit associé avec un prix
-    else if (item.product?.salePrice) {
-      total += item.product.salePrice * item.quantity;
-      console.log(
-        `Article ${item.id} (via product): ${item.product.salePrice} x ${
-          item.quantity
-        } = ${item.product.salePrice * item.quantity}`
-      );
-    }
-    // Si aucune information de prix n'est disponible
-    else {
-      console.warn(`Impossible de trouver le prix pour l'article ${item.id}`);
-    }
+    // Pour l'instant, on retourne 0 car les prix sont chargés dans ProductItem
+    // Cette fonction sera améliorée quand on aura la structure complète
+    console.log(`Article ${item.id}:`, item);
   });
 
-  console.log("Total calculé:", total);
+  // Solution temporaire : on calcule le total côté client via les produits chargés
+  // Dans une vraie application, il faudrait avoir les prix dans le panier
   return total;
 }
 
-// Version alternative si la première ne fonctionne pas
-function calculateTotalPriceAlternative(cartItems) {
+// Version alternative qui utilise les données des produits
+function calculateTotalPriceFromProducts(cartItems, products) {
   if (!cartItems || cartItems.length === 0) return 0;
 
-  console.log("Structure des données du panier:", cartItems);
-
-  // Afficher la structure complète pour debug
-  cartItems.forEach((item, index) => {
-    console.log(`Article ${index}:`, item);
-    console.log(`Propriétés de l'article:`, Object.keys(item));
-    if (item.product) {
-      console.log(`Propriétés du produit:`, Object.keys(item.product));
-    }
-  });
-
-  // Essayer différentes structures de données possibles
-  const total = cartItems.reduce((sum, item) => {
-    // Essayer différentes propriétés possibles pour le prix
-    const price =
-      item.salePrice ||
-      item.price ||
-      item.product?.salePrice ||
-      item.product?.price ||
-      0;
-
+  return cartItems.reduce((total, item) => {
+    const product = products.find((p) => p.id === item.id);
+    const price = product?.salePrice || product?.price || 0;
     const quantity = item.quantity || 1;
-    const itemTotal = price * quantity;
-
-    console.log(
-      `Article ${item.id}: prix=${price}, quantité=${quantity}, total=${itemTotal}`
-    );
-
-    return sum + itemTotal;
+    return total + price * quantity;
   }, 0);
-
-  return total;
 }

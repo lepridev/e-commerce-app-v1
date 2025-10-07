@@ -94,7 +94,7 @@ function Row({ item, index, router }) {
             alt={item?.name || "Brand image"}
             width={64}
             height={64}
-            className="object-cover rounded"
+            className="object-contain rounded"
           />
         </div>
       </td>

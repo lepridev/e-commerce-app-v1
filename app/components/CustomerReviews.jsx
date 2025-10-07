@@ -3,28 +3,31 @@ import { Rating } from "@mui/material";
 export default function CustomerReviews() {
   const list = [
     {
-      name: "Penny albritoon",
-      message:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
+      id: "1",
+      displayName: "Penny Albritoon",
+      message: "Produits de très bonne qualité, je recommande !",
       rating: 4.5,
-      imageLink:
+      photoURL:
         "https://emilly-store1.myshopify.com/cdn/shop/files/bakery-testi-1.jpg?v=1721992196&width=512",
+      timestamp: { toDate: () => new Date() },
     },
     {
-      name: "Oscar Nommanee",
-      message:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
+      id: "2",
+      displayName: "Oscar Nommanee",
+      message: "Service client excellent et livraison rapide.",
       rating: 5,
-      imageLink:
+      photoURL:
         "https://emilly-store1.myshopify.com/cdn/shop/files/bakery-testi-5.jpg?v=1721992196&width=512",
+      timestamp: { toDate: () => new Date() },
     },
     {
-      name: "Emma Watsom",
-      message:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
+      id: "3",
+      displayName: "Emma Watson",
+      message: "Très satisfaite de mes achats, je reviendrai.",
       rating: 4.5,
-      imageLink:
+      photoURL:
         "https://emilly-store1.myshopify.com/cdn/shop/files/bakery-testi-6.jpg?v=1721992197&width=512",
+      timestamp: { toDate: () => new Date() },
     },
   ];
   return (
@@ -36,11 +39,11 @@ export default function CustomerReviews() {
             return (
               <div className="flex flex-col gap-2 p-4 rounded-lg justify-center items-center border">
                 <img
-                  src={item?.imageLink}
+                  src={item?.photoURL}
                   className="h-32 w-32 rounded-full object-cover"
                   alt=""
                 />
-                <h1 className="text-sm font-semibold">{item?.name}</h1>
+                <h1 className="text-sm font-semibold">{item?.displayName}</h1>
                 <Rating
                   size="small"
                   name="customer-rating"

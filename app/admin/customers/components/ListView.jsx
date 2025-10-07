@@ -1,32 +1,50 @@
 "use client";
 
 import { useUsers } from "@/lib/firestore/user/read";
-import { Avatar, Button, CircularProgress } from "@nextui-org/react";
+import { Avatar, CircularProgress } from "@nextui-org/react";
+import { useState } from "react";
 
 export default function ListView() {
   const { data: users, error, isLoading } = useUsers();
 
+  // Debug: afficher les données reçues
+  console.log("Users data:", users);
+
   if (isLoading) {
     return (
-      <div>
+      <div className="flex justify-center p-8">
         <CircularProgress />
       </div>
     );
   }
+
   if (error) {
-    return <div>{error}</div>;
+    return (
+      <div className="text-red-500 p-4 text-center">
+        Erreur de chargement: {error}
+      </div>
+    );
   }
+
+  if (!users || users.length === 0) {
+    return (
+      <div className="text-center p-8 text-gray-500">
+        Aucun utilisateur trouvé
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col gap-3 md:pr-5 md:px-0 px-5 rounded-xl">
-      <table className="border-separate border-spacing-y-3">
+      <table className="border-separate border-spacing-y-3 w-full">
         <thead>
           <tr>
             <th className="font-semibold border-y bg-white px-3 py-2 border-l rounded-l-lg">
-              SN
+              N°
             </th>
             <th className="font-semibold border-y bg-white px-3 py-2">Photo</th>
             <th className="font-semibold border-y bg-white px-3 py-2 text-left">
-              Name
+              Nom
             </th>
             <th className="font-semibold border-y bg-white px-3 py-2 text-left">
               Email
@@ -34,9 +52,9 @@ export default function ListView() {
           </tr>
         </thead>
         <tbody>
-          {users?.map((item, index) => {
-            return <Row index={index} item={item} key={item?.id} />;
-          })}
+          {users.map((item, index) => (
+            <Row index={index} item={item} key={item?.id || index} />
+          ))}
         </tbody>
       </table>
     </div>
@@ -44,6 +62,13 @@ export default function ListView() {
 }
 
 function Row({ item, index }) {
+  const [imgError, setImgError] = useState(false);
+
+  // Gestion des valeurs par défaut
+  const displayName = item?.displayName || "Nom non renseigné";
+  const email = item?.email || "Email non renseigné";
+  const photoURL = item?.photoURL;
+
   return (
     <tr>
       <td className="border-y bg-white px-3 py-2 border-l rounded-l-lg text-center">
@@ -51,11 +76,16 @@ function Row({ item, index }) {
       </td>
       <td className="border-y bg-white px-3 py-2 text-center">
         <div className="flex justify-center">
-          <Avatar src={item?.photoURL} />
+          <Avatar
+            src={photoURL && !imgError ? photoURL : undefined}
+            name={displayName.charAt(0).toUpperCase()}
+            onError={() => setImgError(true)}
+            className="w-8 h-8"
+          />
         </div>
       </td>
-      <td className="border-y bg-white px-3 py-2">{item?.displayName}</td>
-      <td className="border-y bg-white px-3 py-2">{item?.email}</td>
+      <td className="border-y bg-white px-3 py-2">{displayName}</td>
+      <td className="border-y bg-white px-3 py-2">{email}</td>
     </tr>
   );
 }

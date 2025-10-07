@@ -321,7 +321,7 @@ ${address?.orderNote ? `📝 **Notes du client:** ${address.orderNote}` : ""}
                     type="text"
                     id="address-line-1"
                     name="address-line-1"
-                    placeholder="Adresse Ligne 1 *"
+                    placeholder="Adresse de livraison *"
                     value={address?.addressLine1 ?? ""}
                     onChange={(e) =>
                       handleAddress("addressLine1", e.target.value)
@@ -341,7 +341,7 @@ ${address?.orderNote ? `📝 **Notes du client:** ${address.orderNote}` : ""}
                     type="text"
                     id="address-line-2"
                     name="address-line-2"
-                    placeholder="Adresse Ligne 2"
+                    placeholder="Adresse de livraison 2 (optionnel)"
                     value={address?.addressLine2 ?? ""}
                     onChange={(e) =>
                       handleAddress("addressLine2", e.target.value)
