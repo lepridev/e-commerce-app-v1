@@ -34,11 +34,15 @@ export default async function Home() {
       : null,
   }));
 
+  // ✅ CORRECTION - Sérialiser les collections aussi !
+  const sanitizedCollections = JSON.parse(JSON.stringify(collections));
+
   return (
     <main className="w-screen h-screen overflow-x-hidden overflow-y-auto">
       <Header />
       <FeaturedProductSlider featuredProducts={sanitizedFeaturedProducts} />
-      <Collections collections={collections} />
+      <Collections collections={sanitizedCollections} />{" "}
+      {/* ✅ Utiliser les données converties */}
       <Categories categories={categories} />
       <ProductsGridView products={products} />
       <CustomerReviews />

@@ -10,10 +10,10 @@ export const POST = async (req, { params }) => {
   try {
     const { type } = await params;
 
-    // Ajouter "collections" aux types autorisés
     if (!["brands", "categories", "products", "collections"].includes(type)) {
       return new Response(
         JSON.stringify({
+          success: false,
           error:
             "Invalid type. Must be 'brands', 'categories', 'products' or 'collections'.",
         }),
@@ -25,9 +25,15 @@ export const POST = async (req, { params }) => {
     const file = formData.get("file");
 
     if (!file) {
-      return new Response(JSON.stringify({ error: "No file provided" }), {
-        status: 400,
-      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "No file provided",
+        }),
+        {
+          status: 400,
+        }
+      );
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -40,15 +46,29 @@ export const POST = async (req, { params }) => {
           if (error) {
             console.error(error);
             resolve(
-              new Response(JSON.stringify({ error: error.message }), {
-                status: 500,
-              })
+              new Response(
+                JSON.stringify({
+                  success: false,
+                  error: error.message,
+                }),
+                {
+                  status: 500,
+                }
+              )
             );
           } else {
+            // ✅ FORMAT CORRIGÉ - Ajouter "success: true" et "imageUrl"
             resolve(
-              new Response(JSON.stringify({ url: result.secure_url }), {
-                status: 200,
-              })
+              new Response(
+                JSON.stringify({
+                  success: true,
+                  imageUrl: result.secure_url,
+                  url: result.secure_url, // Garder l'ancien format pour compatibilité
+                }),
+                {
+                  status: 200,
+                }
+              )
             );
           }
         }
@@ -58,8 +78,14 @@ export const POST = async (req, { params }) => {
     });
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message,
+      }),
+      {
+        status: 500,
+      }
+    );
   }
 };
