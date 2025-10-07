@@ -1,4 +1,3 @@
-// lib/firestore/categories/write.js
 import { db } from "@/lib/firebase";
 import {
   doc,
@@ -9,50 +8,70 @@ import {
 } from "firebase/firestore";
 import { nanoid } from "nanoid";
 
-// ✅ Create new category
+// ✅ CREATE NEW CATEGORY
 export async function createNewCategory({ data }) {
   try {
-    const categoryId = nanoid(); // ID unique généré
-    await setDoc(doc(db, "categories", categoryId), {
-      ...data,
-      id: categoryId, // on stocke l'id dans le doc
+    const categoryId = nanoid();
+
+    const categoryData = {
+      name: data.name,
+      slug: data.slug,
+      imageUrl: data.imageUrl || null,
+      id: categoryId,
       createdAt: serverTimestamp(),
-    });
+      updatedAt: serverTimestamp(),
+    };
+
+    console.log("📝 Création de la catégorie:", categoryData);
+
+    await setDoc(doc(db, "categories", categoryId), categoryData);
+
     return { success: true, id: categoryId };
   } catch (error) {
-    console.error("Error creating category:", error);
+    console.error("❌ Erreur création catégorie:", error);
     return { error: error.message };
   }
 }
 
-// ✅ Update category
+// ✅ UPDATE CATEGORY
 export async function updateCategory({ data }) {
   try {
-    if (!data.id) throw new Error("Category ID is required");
+    if (!data.id) {
+      throw new Error("ID de catégorie requis");
+    }
+
+    console.log("📝 Mise à jour de la catégorie:", data.id, data);
 
     const categoryRef = doc(db, "categories", data.id);
+
     await updateDoc(categoryRef, {
       name: data.name,
       slug: data.slug,
-      imageUrl: data.imageUrl || null,
+      imageUrl: data.imageUrl,
       updatedAt: serverTimestamp(),
     });
 
     return { success: true };
   } catch (error) {
-    console.error("Error updating category:", error);
+    console.error("❌ Erreur mise à jour catégorie:", error);
     return { error: error.message };
   }
 }
 
-// ✅ Delete category
+// ✅ DELETE CATEGORY
 export async function deleteCategory({ id }) {
-  if (!id) throw new Error("Category ID is required");
   try {
+    if (!id) {
+      throw new Error("ID de catégorie requis");
+    }
+
+    console.log("🗑️ Suppression de la catégorie:", id);
+
     await deleteDoc(doc(db, "categories", id));
+
     return { success: true };
   } catch (error) {
-    console.error("Error deleting category:", error);
+    console.error("❌ Erreur suppression catégorie:", error);
     return { error: error.message };
   }
 }
